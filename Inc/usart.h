@@ -39,7 +39,7 @@ extern UART_HandleTypeDef huart3;
 void MX_USART3_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void sendDataViaUsart3DMA(uint32_t buf, uint32_t size);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

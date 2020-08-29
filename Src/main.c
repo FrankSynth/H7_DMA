@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -27,7 +27,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+// #include <string>
+#include <stdio.h>
+#include <string.h>
+#include <string>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,18 +50,20 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+extern DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void DMATransferComplete(DMA_HandleTypeDef *hdma);
+void DMATransferCompleteHalf(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+DMA_BUFFER char teststring2[200];
 /* USER CODE END 0 */
 
 /**
@@ -77,7 +82,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -94,17 +98,38 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
+    // HAL_DMA_RegisterCallback(&hdma_usart3_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
+    // HAL_DMA_RegisterCallback(&hdma_usart3_tx, HAL_DMA_XFER_HALFCPLT_CB_ID, &DMATransferCompleteHalf);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    while (1) {
+
+        // HAL_DMA_Start_IT(&hdma_usart3_tx, (uint32_t)teststring2, (uint32_t)&huart3.Instance->TDR,
+        // strlen(teststring2));
+
+        std::string output = "hello dear DMA ";
+        static int i = 0;
+        output.append(std::to_string(i));
+        output.append("\r\n");
+        strcpy(teststring2, output.data());
+        strcpy(teststring2, "hello dear DMA\r\n");
+        i++;
+
+        // huart3.Instance->CR3 |= USART_CR3_DMAT;
+        // HAL_DMA_Start_IT(&hdma_usart3_tx, (uint32_t)teststring2, (uint32_t)&huart3.Instance->TDR, strlen(teststring2));
+        // HAL_UART_Transmit_DMA(&huart3, (uint8_t *)teststring2, strlen(teststring2));
+        HAL_UART_Transmit(&huart3, (uint8_t *)teststring2, strlen(teststring2), 100);
+        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+
+        HAL_Delay(1000);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -177,7 +202,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+// void HAL_UART_HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {}
+void DMATransferComplete(DMA_HandleTypeDef *hdma) {
+    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+}
+void DMATransferCompleteHalf(DMA_HandleTypeDef *hdma) {
+    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+}
 /* USER CODE END 4 */
 
 /**
@@ -187,7 +218,7 @@ void SystemClock_Config(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+    /* User can add his own implementation to report the HAL error return state */
 
   /* USER CODE END Error_Handler_Debug */
 }
@@ -203,8 +234,8 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    /* User can add his own implementation to report the file name and line number,
+       tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

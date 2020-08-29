@@ -1,0 +1,84 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build STM cpp",
+            "type": "shell",
+            "command": "make -f STM32MakeCPP.make LIBS=\"-lc -lm -lnosys -lstdc++\"",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build and Flash STM cpp",
+            "type": "shell",
+            "command": "openocd -f interface/stlink.cfg  -f target/stm32h7x.cfg -c 'program build/H7_DMA.elf verify reset exit'",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build STM cpp",
+            ]
+        },
+        {
+            "label": "Build STM",
+            "type": "process",
+            "command": "${command:stm32-for-vscode.build}",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Build Clean STM",
+            "type": "process",
+            "command": "${command:stm32-for-vscode.cleanBuild}",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Flash STM",
+            "type": "process",
+            "command": "${command:stm32-for-vscode.flash}",
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
