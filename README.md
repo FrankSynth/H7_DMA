@@ -26,9 +26,9 @@ LDSCRIPT = STM32H743ZITx_FLASH.ld
 ```
 zu
 ```
-LDSCRIPT = STM32H743ZITx_FLASH.ld  DMA_Buffer.ld
+LDSCRIPT = STM32H743ZITx_FLASH.ld -TDMA_Buffer.ld 
 ```
-aendern.
+aendern. Vor der neuen Datei kommt ein "-T".
 
 In die **main.h**:
 ```

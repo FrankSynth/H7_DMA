@@ -22,6 +22,8 @@
 #include "dma.h"
 #include "eth.h"
 #include "gpio.h"
+#include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
 
@@ -50,15 +52,14 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-DMA_BUFFER char teststring2[200];
+DMA_BUFFER char _char_bufferDMA1[200]; // DMA Buffer
+DMA_BUFFER char _char_bufferDMA2[200]; // DMA Buffer2
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-// void DMATransferComplete(DMA_HandleTypeDef *hdma);
-// void DMATransferCompleteHalf(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -95,9 +96,17 @@ int main(void) {
     MX_ETH_Init();
     MX_USART3_UART_Init();
     MX_USB_OTG_FS_PCD_Init();
+    MX_TIM2_Init();
+    MX_TIM5_Init();
+    MX_USART2_Init();
+    MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    // HAL_DMA_RegisterCallback(&hdma_usart3_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
-    // HAL_DMA_RegisterCallback(&hdma_usart3_tx, HAL_DMA_XFER_HALFCPLT_CB_ID, &DMATransferCompleteHalf);
+
+    // callbacks for HAL_UART_Transmit_IT function
+
+    // start timers
+    HAL_TIM_Base_Start(&htim2);
+    HAL_TIM_Base_Start(&htim5);
 
     /* USER CODE END 2 */
 
@@ -105,18 +114,28 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     while (1) {
 
-        std::string output = "hello dear DMA ";
-        static int i = 0;
-        output.append(std::to_string(i));
+        static uint32_t timer1;
+        static uint32_t timer2;
+
+        timer1 = __HAL_TIM_GetCounter(&htim2);
+        timer2 = __HAL_TIM_GetCounter(&htim5);
+
+        std::string output = "Timer1: ";
+        output.append(std::to_string(timer1));
+        output.append(", Timer2: ");
+        output.append(std::to_string(timer2));
         output.append("\r\n");
-        strcpy(teststring2, output.data());
+        strcpy(_char_bufferDMA1, output.data());
 
-        HAL_UART_Transmit_DMA(&huart3, (uint8_t *)teststring2, output.size());
-        // HAL_UART_Transmit_DMA(&huart3, (uint8_t *)teststring2, strlen(teststring2));
+        strcpy(_char_bufferDMA2, "DMA 2 online\r\n");
+        /* with the string class we can also use size() instead of strlen(teststring2). the line also doesn't have to end with
+         \r\n to work properly. */
+        HAL_UART_Transmit_DMA(&huart3, (uint8_t *)_char_bufferDMA1, output.size());
 
-        i++;
-        HAL_Delay(100);
+        HAL_USART_Transmit_DMA(&husart2, (uint8_t *)_char_bufferDMA2, strlen(_char_bufferDMA2));
 
+        HAL_Delay(500);
+        HAL_Delay(500);
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -177,7 +196,9 @@ void SystemClock_Config(void) {
     if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
         Error_Handler();
     }
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3 | RCC_PERIPHCLK_USB;
+    PeriphClkInitStruct.PeriphClockSelection =
+        RCC_PERIPHCLK_USART3 | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_SPI1 | RCC_PERIPHCLK_USB;
+    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
     PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
     PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
@@ -189,12 +210,42 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
-// void HAL_UART_HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {}
-void DMATransferComplete(DMA_HandleTypeDef *hdma) {
-    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+
+// example callbacks for DMA transfer of data
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == huart3.Instance) {
+        HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+    }
 }
-void DMATransferCompleteHalf(DMA_HandleTypeDef *hdma) {
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == huart3.Instance) {
+        // do sth
+    }
+}
+
+void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart) {
+    if (husart->Instance == husart2.Instance) {
+        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    }
+}
+
+void HAL_USART_RxCpltCallback(USART_HandleTypeDef *husart) {
+    if (husart->Instance == husart2.Instance) {
+        // do sth
+    }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (hspi->Instance == hspi1.Instance) {
+        // do sth
+    }
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (hspi->Instance == hspi1.Instance) {
+        // do sth
+    }
 }
 /* USER CODE END 4 */
 

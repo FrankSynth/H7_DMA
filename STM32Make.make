@@ -67,6 +67,7 @@ Src/gpio.c \
 Src/stm32h7xx_hal_msp.c \
 Src/stm32h7xx_it.c \
 Src/system_stm32h7xx.c \
+Src/tim.c \
 Src/usart.c \
 Src/usb_otg.c
 

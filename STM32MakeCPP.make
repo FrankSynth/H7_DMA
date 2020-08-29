@@ -56,17 +56,23 @@ Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c \
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c \
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c \
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_usart.c \
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_usart_ex.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c \
 Src/dma.c \
 Src/eth.c \
 Src/gpio.c \
+Src/spi.c \
 Src/stm32h7xx_hal_msp.c \
 Src/stm32h7xx_it.c \
 Src/system_stm32h7xx.c \
+Src/tim.c \
 Src/usart.c \
 Src/usb_otg.c
 
@@ -164,7 +170,7 @@ CXXFLAGS += -feliminate-unused-debug-types
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32H743ZITx_FLASH.ld DMA_Buffer.ld 
+LDSCRIPT = STM32H743ZITx_FLASH.ld -TDMA_Buffer.ld 
 
 # libraries
 LIBS = -lc -lm -lnosys 
