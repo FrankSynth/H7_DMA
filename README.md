@@ -53,7 +53,6 @@ Diese koennen keine lokalen Variablen sein, und koennen beim compilen nicht dire
 ```
 HAL_UART_Transmit_DMA(&huart3, (uint8_t *)_char_buffer, strlen(_char_buffer));
 ```
-Damit strlen funktioniert muss der _char_buffer auf \r\n enden.
 Beispiel siehe **main.cpp**.
 
 ## CubeMX
