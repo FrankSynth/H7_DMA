@@ -42,6 +42,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define SPI_BUFFER_LENGTH 10
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,8 +54,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-DMA_BUFFER char _char_bufferDMA1[200]; // DMA Buffer
-DMA_BUFFER char _char_bufferDMA2[200]; // DMA Buffer2
+
+DMA_BUFFER char _char_bufferDMA1[200];                      // DMA Buffer
+DMA_BUFFER char _char_bufferDMA2[200];                      // DMA Buffer2
+DMA_BUFFER char _spi_buffer_TX[SPI_BUFFER_LENGTH];          // DMA Buffer2
+DMA_BUFFER volatile char _spi_buffer_RX[SPI_BUFFER_LENGTH]; // DMA Buffer2
+
+uint8_t _spi_rx_flag = 0;
 
 /* USER CODE END PV */
 
@@ -109,34 +116,54 @@ int main(void)
     HAL_TIM_Base_Start(&htim2);
     HAL_TIM_Base_Start(&htim5);
 
+    HAL_SPI_Receive_DMA(&hspi1, (uint8_t *)_spi_buffer_RX, SPI_BUFFER_LENGTH);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (1) {
 
-        static uint32_t timer1;
-        static uint32_t timer2;
+        static uint32_t timerMicros;
+        static uint32_t timerMillis;
 
-        timer1 = __HAL_TIM_GetCounter(&htim2);
-        timer2 = __HAL_TIM_GetCounter(&htim5);
+        // once every second
+        if (__HAL_TIM_GetCounter(&htim5) - timerMillis > 1000) {
 
-        std::string output = "Timer1: ";
-        output.append(std::to_string(timer1));
-        output.append(", Timer2: ");
-        output.append(std::to_string(timer2));
-        output.append("\r\n");
-        strcpy(_char_bufferDMA1, output.data());
+            timerMicros = __HAL_TIM_GetCounter(&htim2);
+            timerMillis = __HAL_TIM_GetCounter(&htim5);
 
-        strcpy(_char_bufferDMA2, "DMA 2 online\r\n");
-        /* with the string class we can also use size() instead of strlen(teststring2). the line also doesn't have to end with
-         \r\n to work properly. */
-        HAL_UART_Transmit_DMA(&huart3, (uint8_t *)_char_bufferDMA1, output.size());
+            // prepare first string
+            std::string output = "Timer1: ";
+            output.append(std::to_string(timerMicros));
+            output.append(", Timer2: ");
+            output.append(std::to_string(timerMillis));
+            output.append("\r\n");
+            strcpy(_char_bufferDMA1, output.data());
 
-        HAL_USART_Transmit_DMA(&husart2, (uint8_t *)_char_bufferDMA2, strlen(_char_bufferDMA2));
+            // prepare second string
+            strcpy(_char_bufferDMA2, "DMA 2 online\r\n");
 
-        HAL_Delay(500);
-        HAL_Delay(500);
+            /* with the string class we can also use size() instead of strlen(teststring2). the line also doesn't have to end with
+             \r\n to work properly. */
+            HAL_UART_Transmit_DMA(&huart3, (uint8_t *)_char_bufferDMA1, output.size());
+
+            // test for callbacks
+            HAL_USART_Transmit_DMA(&husart2, (uint8_t *)_char_bufferDMA2, strlen(_char_bufferDMA2));
+
+            HAL_Delay(100);
+            // send SPI
+            memset(_spi_buffer_TX, 0b01010101, SPI_BUFFER_LENGTH);
+
+            HAL_UART_Transmit_DMA(&huart3, (uint8_t *)_spi_buffer_TX, SPI_BUFFER_LENGTH);
+
+            HAL_SPI_Transmit_DMA(&hspi1, (uint8_t *)_spi_buffer_TX, SPI_BUFFER_LENGTH);
+        }
+
+        if (_spi_rx_flag) {
+            _spi_rx_flag = 0;
+        }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -218,9 +245,12 @@ void SystemClock_Config(void)
 
 // example callbacks for DMA transfer of data
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
-    if (huart->Instance == huart3.Instance)
+    if (huart->Instance == huart3.Instance) {
+        // toggle pin to show callback is working
         HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+    }
 }
+
 void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == huart3.Instance) {
         // do sth
@@ -229,12 +259,27 @@ void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef *huart) {
 
 void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart) {
     if (husart->Instance == husart2.Instance) {
-        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+        // do sth
     }
 }
+
 void HAL_USART_RxCpltCallback(USART_HandleTypeDef *husart) {
     if (husart->Instance == husart2.Instance) {
         // do sth
+    }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (hspi->Instance == hspi1.Instance) {
+        _spi_rx_flag = 1;
+    }
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+    if (hspi->Instance == hspi1.Instance) {
+        // toggle pin to show callback is working
+        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     }
 }
 /* USER CODE END 4 */
