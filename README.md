@@ -58,3 +58,6 @@ Beispiel siehe **main.cpp**.
 ## CubeMX
 
 Hier muss DMA fuer USART3 aktiviert werden, Memory To Peripheral, Normal Mode. USART3 Global Interrupt MUSS ebenfalls aktiviert werden.
+
+## Clocks
+Max Clockings koennen aus diesem Projekt bezogen werden.
